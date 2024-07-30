@@ -20,6 +20,7 @@ Imports System.Windows.Forms.DataVisualization.Charting
 
 Public Class Form1
 
+    Private summaryTable As DataTable
 
     Public tmpTable As DataTable
 
@@ -142,7 +143,12 @@ Public Class Form1
 
         Me.Text = strAppText
 
-
+        ' Populate ComboBox1 with filter options
+        ComboBox1.Items.Add("Select Filter")
+        ComboBox1.Items.Add("Top 3")
+        ComboBox1.Items.Add("Top 5")
+        ComboBox1.Items.Add("Top 10")
+        ComboBox1.SelectedIndex = 0 ' Set default to "Select Filter"
 
         'Me.MaximizeBox = False
         rbIflex.Checked = True
@@ -546,15 +552,6 @@ proc:
         Me.Label9.Text = totalTestNumCount
         Me.Label11.Text = totalTestNameCount
 
-        'FOR CHECKING
-        'MsgBox("Distinct TestNum count: " & distinctTestNumCount & vbCrLf &
-        '"Distinct TestName count: " & distinctTestNameCount & vbCrLf &
-        '"Total TestNum count: " & totalTestNumCount & vbCrLf &
-        '"Total TestName count: " & totalTestNameCount)
-
-        'SUB TEST
-        'CountAlarmsAndFailsBySite(tmpTable, "ADI Trim 1")
-
         Me.Text = strAppText + "   " + "[ Data has been Successfullyloaded. ]"
         Me.TextBox1.Enabled = True
         Me.Button4.Enabled = True
@@ -638,6 +635,31 @@ proc:
         Return dtSummary
     End Function
 
+    Private Sub CreateOrUpdateChartSeries()
+        ' Clear existing series (if any)
+        Chart3.Series.Clear()
+
+        ' Create series for Total Alarms
+        Dim seriesAlarms As New Series("Total Alarms")
+        seriesAlarms.ChartType = SeriesChartType.Column
+        Chart3.Series.Add(seriesAlarms) ' Add to chart immediately
+
+        ' Create series for Total Fails
+        Dim seriesFails As New Series("Total Fails")
+        seriesFails.ChartType = SeriesChartType.Column
+        Chart3.Series.Add(seriesFails) ' Add to chart immediately
+
+        ' Now populate the series with data from summaryTable
+        For Each row As DataRow In summaryTable.Rows
+            Chart3.Series("Total Alarms").Points.AddXY(row("Test Number").ToString(), CInt(row("Total Alarms")))
+            Chart3.Series("Total Fails").Points.AddXY(row("Test Number").ToString(), CInt(row("Total Fails")))
+        Next
+
+        ' Update chart appearance
+        Chart3.ChartAreas(0).RecalculateAxesScale()
+        Chart3.Invalidate()
+    End Sub
+
     Private Sub Button3_Click(sender As Object, e As EventArgs) Handles Button3.Click
 
         Dim txtFind As String = TextBox1.Text
@@ -660,7 +682,10 @@ proc:
 
     Private Sub Button4_Click(sender As Object, e As EventArgs) Handles Button4.Click
 
-        Dim summaryTable As DataTable = CreateSummaryDataTable()
+        summaryTable = CreateSummaryDataTable()
+
+        ' After populating summaryTable:
+        CreateOrUpdateChartSeries() ' Create or update the chart series
 
         ' Clear existing series
         Chart3.Series.Clear()
@@ -675,8 +700,8 @@ proc:
 
         ' Populate the series with data from the summary table
         For Each row As DataRow In summaryTable.Rows
-            seriesAlarms.Points.AddXY(row("Test Name").ToString(), CInt(row("Total Alarms")))
-            seriesFails.Points.AddXY(row("Test Name").ToString(), CInt(row("Total Fails")))
+            seriesAlarms.Points.AddXY(row("Test Number").ToString(), CInt(row("Total Alarms")))
+            seriesFails.Points.AddXY(row("Test Number").ToString(), CInt(row("Total Fails")))
         Next
 
         ' Add the series to the chart
@@ -686,8 +711,8 @@ proc:
         ' Optionally, set chart title and other properties
         Chart3.Titles.Clear()
         Chart3.Titles.Add("Main Test Failure (MTF)")
-        Chart3.ChartAreas(0).AxisX.Title = "Test Name"
-        Chart3.ChartAreas(0).AxisY.Title = "Count"
+        Chart3.ChartAreas(0).AxisX.Title = "Test Number"
+        Chart3.ChartAreas(0).AxisY.Title = "Total Count"
 
         ' Ensure all test names are displayed on the X-axis with dynamic adjustments
         Dim numLabels As Integer = summaryTable.Rows.Count
@@ -716,6 +741,43 @@ proc:
 
         'DISPLAY SUMMARY
         DataGridView1.DataSource = summaryTable
+    End Sub
+
+    Private Sub FilterAndUpdateChart()
+        Dim selectedFilter As String = ComboBox1.SelectedItem.ToString()
+        Dim view As List(Of DataRow)  ' Change the type here to List(Of DataRow)
+        view = summaryTable.AsEnumerable().ToList() 'Initialize the variable
+
+        ' Apply filtering based on the selected option
+        Select Case selectedFilter
+            Case "Top 3"
+                view = view.OrderByDescending(Function(row) CInt(row("Total Fails"))).Take(3).ToList()
+            Case "Top 5"
+                view = view.OrderByDescending(Function(row) CInt(row("Total Fails"))).Take(5).ToList()
+            Case "Top 10"
+                view = view.OrderByDescending(Function(row) CInt(row("Total Fails"))).Take(10).ToList()
+            Case Else
+                ' No filtering needed 
+        End Select
+
+        'Clear Chart 
+        Chart3.Series("Total Alarms").Points.Clear()
+        Chart3.Series("Total Fails").Points.Clear()
+        ' Populate chart with (potentially) filtered data
+        For Each row In view
+            Chart3.Series("Total Alarms").Points.AddXY(row("Test Number"), CInt(row("Total Alarms")))
+            Chart3.Series("Total Fails").Points.AddXY(row("Test Number"), CInt(row("Total Fails")))
+        Next
+
+        ' Update chart appearance
+        Chart3.ChartAreas(0).RecalculateAxesScale()
+        Chart3.Invalidate()
+    End Sub
+
+    Private Sub ComboBox1_SelectedIndexChanged_1(sender As Object, e As EventArgs) Handles ComboBox1.SelectedIndexChanged
+        If summaryTable IsNot Nothing Then
+            FilterAndUpdateChart()
+        End If
     End Sub
 
     Public Sub m_SearchParamData(ByVal strtofind As String, ByVal strpath As String, ByVal tmptable As DataTable)
