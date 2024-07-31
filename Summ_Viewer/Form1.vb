@@ -481,85 +481,97 @@ proc:
     End Sub
 
 
-    Sub mtfSearcher()
-
+    Public Sub mtfSearcher()
+        ' Switch to the desired tab
         TabControl1.SelectedIndex = 1
 
+        ' Create a new DataTable and define columns only once
         tmpTable = New DataTable
 
-        If tmpTable.Rows.Count > 0 Then
-            tmpTable.Rows.Clear() 'clear all data from the table
-        End If
+        ' Define columns for the DataTable
+        tmpTable.Columns.Add("DTRptGenerated", GetType(String))
+        tmpTable.Columns.Add("DeviceID", GetType(String))
+        tmpTable.Columns.Add("Lotno", GetType(String))
+        tmpTable.Columns.Add("JobName", GetType(String))
+        tmpTable.Columns.Add("PgmName", GetType(String))
+        tmpTable.Columns.Add("PgmFolderPath", GetType(String))
+        tmpTable.Columns.Add("TesterName", GetType(String))
+        tmpTable.Columns.Add("IGXLVer", GetType(String))
+        tmpTable.Columns.Add("PartType", GetType(String))
+        tmpTable.Columns.Add("PackageType", GetType(String))
+        tmpTable.Columns.Add("TestCode", GetType(String))
+        tmpTable.Columns.Add("TestTemperature", GetType(String))
+        tmpTable.Columns.Add("HdlrType", GetType(String))
+        tmpTable.Columns.Add("HdlrID", GetType(String))
+        tmpTable.Columns.Add("LBused", GetType(String))
+        tmpTable.Columns.Add("SktsUsed", GetType(String))
+        tmpTable.Columns.Add("DevNum", GetType(String))
+        tmpTable.Columns.Add("RowNum", GetType(String))
+        tmpTable.Columns.Add("TestNum", GetType(String))
+        tmpTable.Columns.Add("Site", GetType(String))
+        tmpTable.Columns.Add("TestName", GetType(String))
+        tmpTable.Columns.Add("AlrmOrFail", GetType(String))
+        tmpTable.Columns.Add("Test_Data", GetType(String))
 
-        tmpTable.Columns.Add("DTRptGenerated", GetType(System.String), Nothing) ' time of report generated
-        tmpTable.Columns.Add("DeviceID", GetType(System.String), Nothing) 'Device ID
-        tmpTable.Columns.Add("Lotno", GetType(System.String), Nothing) 'Customer lot number
-        tmpTable.Columns.Add("JobName", GetType(System.String), Nothing) 'Load filename
-        tmpTable.Columns.Add("PgmName", GetType(System.String), Nothing) 'Excel pgm name
-        tmpTable.Columns.Add("PgmFolderPath", GetType(System.String), Nothing) ' Folder path
-        tmpTable.Columns.Add("TesterName", GetType(System.String), Nothing) 'what test station
-        tmpTable.Columns.Add("IGXLVer", GetType(System.String), Nothing) 'IGXL version
-        tmpTable.Columns.Add("PartType", GetType(System.String), Nothing) 'Device name
-        tmpTable.Columns.Add("PackageType", GetType(System.String), Nothing) 'Package type
-        tmpTable.Columns.Add("TestCode", GetType(System.String), Nothing) 'If FT or QA
-        tmpTable.Columns.Add("TestTemperature", GetType(System.String), Nothing) 'what temperature
-        tmpTable.Columns.Add("HdlrType", GetType(System.String), Nothing) 'Hdlr type
-        tmpTable.Columns.Add("HdlrID", GetType(System.String), Nothing) 'Hdlr ID
-        tmpTable.Columns.Add("LBused", GetType(System.String), Nothing) 'Loadboard used
-        tmpTable.Columns.Add("SktsUsed", GetType(System.String), Nothing) 'Socket used
-        tmpTable.Columns.Add("DevNum", GetType(System.String), Nothing) 'Device number
-        tmpTable.Columns.Add("RowNum", GetType(System.String), Nothing) 'row number
-        tmpTable.Columns.Add("TestNum", GetType(System.String), Nothing) 'What test number
-        tmpTable.Columns.Add("Site", GetType(System.String), Nothing) 'what Site
-        tmpTable.Columns.Add("TestName", GetType(System.String), Nothing) 'Test name
-        tmpTable.Columns.Add("AlrmOrFail", GetType(System.String), Nothing) 'Alarm or Fail?
-        tmpTable.Columns.Add("Test_Data", GetType(System.String), Nothing) 'Test number
-
-        'Dim folderDir As String = SaveFileFolder + "\summToSearch"
-
+        ' Define the search string and split it into words
         Dim s As String = " (F) "
+        Dim words As String() = s.Split(New Char() {CChar(vbTab), ";"c})
 
-        Dim words As String() = s.Split(New [Char]() {CChar(vbTab), ";"c}) 's.Split(New [Char]() {";"c})
-
-        Dim word As String 'strtofind
-        For Each word In words
+        ' Process each word
+        For Each word As String In words
             m_SearchParamData(word, ffd, tmpTable)
         Next
 
-        'DataGridView1.DataSource = tmpTable
-
-
-
-
-        If tmpTable IsNot Nothing AndAlso tmpTable.Rows.Count > 0 Then
+        ' Update DataGridView if the DataTable is not empty
+        If tmpTable.Rows.Count > 0 Then
             DataGridView1.DataSource = tmpTable
+            dgvColAutoFit(DataGridView1)
         Else
-            MsgBox("I think the the Datatable is empty!!!")
+            MessageBox.Show("I think the DataTable is empty!!!")
         End If
-        dgvColAutoFit(DataGridView1)
 
-        'UNIQUE VALUES
-        Dim distinctTestNumCount As Integer = tmpTable.AsEnumerable().Select(Function(row) row.Field(Of String)("TestNum")).Distinct().Count()
-        Dim distinctTestNameCount As Integer = tmpTable.AsEnumerable().Select(Function(row) row.Field(Of String)("TestName")).Distinct().Count()
+        ' Calculate distinct and total counts in a single iteration
+        Dim distinctTestNumCount As Integer = 0
+        Dim distinctTestNameCount As Integer = 0
+        Dim totalTestNumCount As Integer = 0
+        Dim totalTestNameCount As Integer = 0
 
-        'TOTAL VALUES
-        Dim totalTestNumCount As Integer = tmpTable.AsEnumerable().Select(Function(row) row.Field(Of String)("TestNum")).Count()
-        Dim totalTestNameCount As Integer = tmpTable.AsEnumerable().Select(Function(row) row.Field(Of String)("TestName")).Count()
+        Dim distinctTestNums As New HashSet(Of String)()
+        Dim distinctTestNames As New HashSet(Of String)()
 
-        'COUNTER
-        Me.Label5.Text = distinctTestNumCount
-        Me.Label7.Text = distinctTestNameCount
-        Me.Label9.Text = totalTestNumCount
-        Me.Label11.Text = totalTestNameCount
+        For Each row As DataRow In tmpTable.Rows
+            Dim testNum As String = row.Field(Of String)("TestNum")
+            Dim testName As String = row.Field(Of String)("TestName")
 
-        Me.Text = strAppText + "   " + "[ Data has been Successfullyloaded. ]"
+            If Not String.IsNullOrEmpty(testNum) Then
+                totalTestNumCount += 1
+                distinctTestNums.Add(testNum)
+            End If
+
+            If Not String.IsNullOrEmpty(testName) Then
+                totalTestNameCount += 1
+                distinctTestNames.Add(testName)
+            End If
+        Next
+
+        distinctTestNumCount = distinctTestNums.Count
+        distinctTestNameCount = distinctTestNames.Count
+
+        ' Update UI labels
+        Me.Label5.Text = distinctTestNumCount.ToString()
+        Me.Label7.Text = distinctTestNameCount.ToString()
+        Me.Label9.Text = totalTestNumCount.ToString()
+        Me.Label11.Text = totalTestNameCount.ToString()
+
+        ' Update the form's title and enable UI elements
+        Me.Text = $"{strAppText} [ Data has been successfully loaded. ]"
         Me.TextBox1.Enabled = True
         Me.Button4.Enabled = True
-        'Button2.Enabled = False
-        'btnDGVtoXL.Enabled = True
-        tmpTable.Dispose()
 
+        ' Dispose of the DataTable
+        tmpTable.Dispose()
     End Sub
+
 
     Sub CountAlarmsAndFailsBySite(ByVal dt As DataTable, ByVal testName As String)
         ' Create a dictionary to store the counts for each site
@@ -781,15 +793,15 @@ proc:
     End Sub
 
     Public Sub m_SearchParamData(ByVal strtofind As String, ByVal strpath As String, ByVal tmptable As DataTable)
+        Dim lines() As String = File.ReadAllLines(strpath)
+        Dim intTotalLines As Integer = lines.Length
 
+        ' Pre-compile the regex pattern
+        Dim strParamtofind As String = "\s\s\([FA]\)\s[-+0-9]"
+        Dim paramRegex As Regex = New Regex(strParamtofind, RegexOptions.Compiled)
+
+        ' Pre-declare and initialize variables
         Dim strTemp() As String
-        Dim lines() As String
-        Dim strline As String = ""
-        Dim filename As String = strpath
-        'folderDir = ffd
-        'Dim fileList = Directory.GetFiles(ffd, "*.txt", False)
-        Dim str As String = String.Empty
-
         Dim DTrptGenerated As String = String.Empty
         Dim xlpgmName As String = String.Empty
         Dim xlJobName As String = String.Empty
@@ -813,196 +825,92 @@ proc:
         Dim Test_Data As String = String.Empty
         Dim AlrmOrFail As String = String.Empty
         Dim Rownum As Integer
-        'Dim Channel As String = String.Empty
-        'Dim mLow As String = String.Empty
-        'Dim Measured As String = String.Empty
-        'Dim mHigh As String = String.Empty
 
+        Dim rows As New List(Of DataRow)
 
-        'For Each fileName In fileList
-
-        lines = File.ReadAllLines(filename)
-        Dim intTotalLines As Integer = lines.Length
-
-        Dim strParamtofind As String = "\s\s\([FA]\)\s[-+0-9]" ' ")\s+([\d]*[.]?[\d]*)?([eE][-+]?[0-9]+)?" '\s+[-+]?[0-9]*\.?[0-9]+([eE][-+]?[0-9]+)?
-        ' Split string based on spaces.
-        For intCounter = 0 To intTotalLines - 1
-            strline = lines(intCounter)
+        ' Process each line
+        For intCounter As Integer = 0 To intTotalLines - 1
+            Dim strline As String = lines(intCounter)
 
             'Date and time report
-            If Regex.IsMatch(strline, "Datalog report") Then
-
+            If strline.Contains("Datalog report") Then
                 strline = lines(intCounter + 1)
-                strTemp = Regex.Split(strline, " ")
-                DTrptGenerated = strTemp(0) + " " + strTemp(1)
-            End If
-            'Excel program
-            If Regex.IsMatch(strline, "      Prog Name:") Then
-                strTemp = Regex.Split(strline, ": ")
-                xlpgmName = strTemp(1).TrimStart
-
+                strTemp = strline.Split(" "c)
+                DTrptGenerated = strTemp(0) & " " & strTemp(1)
             End If
 
-            'Job name in excel
-            If Regex.IsMatch(strline, "       Job Name:") Then
+            ' Various metadata
+            Select Case True
+                Case strline.Contains("      Prog Name:")
+                    xlpgmName = strline.Split(":"c)(1).TrimStart()
+                Case strline.Contains("       Job Name:")
+                    xlJobName = strline.Split(":"c)(1).TrimStart()
+                Case strline.Contains("            Lot:")
+                    CustLotID = strline.Split(":"c)(1).TrimStart()
+                Case strline.Contains("      Node Name:")
+                    Station = strline.Split(":"c)(1).TrimStart()
+                Case strline.Contains("      Part Type:")
+                    PartType = strline.Split(":"c)(1).TrimStart()
+                Case strline.Contains("        AuxFile:")
+                    PgmFolderPath = strline.Split(":"c)(1).TrimStart()
+                Case strline.Contains("       ExecType:")
+                    IGXLver = strline.Split(":"c)(1).TrimStart()
+                Case strline.Contains("       FamilyID:")
+                    DeviceID = strline.Split(":"c)(1).TrimStart()
+                Case strline.Contains("        PkgType:")
+                    PackageType = strline.Split(":"c)(1).TrimStart()
+                Case strline.Contains("       TestCode:")
+                    TestCode = strline.Split(":"c)(1).TrimStart()
+                Case strline.Contains("        TstTemp:")
+                    TestTemp = strline.Split(":"c)(1).TrimStart()
+                Case strline.Contains("       HandType:")
+                    hdlrType = strline.Split(":"c)(1).TrimStart()
+                Case strline.Contains("         HandID:")
+                    hdlrID = strline.Split(":"c)(1).TrimStart()
+                Case strline.Contains("         LoadID:")
+                    ldBrdID = strline.Split(":"c)(1).TrimStart()
+                Case strline.Contains("         ContID:")
+                    socketIDs = strline.Split(":"c)(1).TrimStart()
+                Case strline.Contains("    Device#: ")
+                    DevNum = "'" & strline.Split(":"c)(1).Trim()
+            End Select
 
-                strTemp = Regex.Split(strline, ": ")
-                xlJobName = strTemp(1).TrimStart
+            ' Process test data
+            If paramRegex.IsMatch(strline) Then
+                Dim tmp As String = paramRegex.Match(strline).Value
+                strTemp = strline.Split(" "c)
+                TestNum = strTemp(1)
+                Test_Data = strline
+                Site = "'" & strTemp(4) & strTemp(5) & strTemp(6) & strTemp(7)
+
+                TestName = String.Join(" ", strTemp.Skip(8).Take(8)).Trim()
+                AlrmOrFail = If(strTemp.Contains("(F)"), "Fail", "Alarm")
+                Rownum = intCounter
+
+                ' Add to rows list
+                Dim newRow As DataRow = tmptable.NewRow()
+                newRow.ItemArray = New Object() {
+                DTrptGenerated, DeviceID, CustLotID, xlJobName, xlpgmName, PgmFolderPath, Station, IGXLver,
+                PartType, PackageType, TestCode, TestTemp, hdlrType, hdlrID, ldBrdID, socketIDs,
+                DevNum, Rownum, TestNum, Site, TestName, AlrmOrFail, Test_Data
+            }
+                rows.Add(newRow)
             End If
-
-            'Customer lot number
-            If Regex.IsMatch(strline, "            Lot:") Then
-                strTemp = Regex.Split(strline, ": ")
-                CustLotID = strTemp(1).TrimStart
-            End If
-
-            'Station name
-            If Regex.IsMatch(strline, "      Node Name:") Then
-                strTemp = Regex.Split(strline, ": ")
-                Station = strTemp(1).TrimStart
-
-            End If
-
-            'Part type
-            If Regex.IsMatch(strline, "      Part Type:") Then
-                strTemp = Regex.Split(strline, ": ")
-                PartType = strTemp(1).TrimStart
-            End If
-
-
-            'Program Folder Path
-            If Regex.IsMatch(strline, "        AuxFile:") Then
-
-                strTemp = Regex.Split(strline, ": ")
-                PgmFolderPath = strTemp(1).TrimStart
-
-            End If
-
-            'IGXL version
-            If Regex.IsMatch(strline, "       ExecType:") Then
-
-                strTemp = Regex.Split(strline, ": ")
-                IGXLver = strTemp(1).TrimStart
-            End If
-
-            'Device ID
-            If Regex.IsMatch(strline, "       FamilyID:") Then
-                strTemp = Regex.Split(strline, ": ")
-                DeviceID = strTemp(1).TrimStart
-
-            End If
-
-            'Package type
-            If Regex.IsMatch(strline, "        PkgType:") Then
-
-                strTemp = Regex.Split(strline, ": ")
-                PackageType = strTemp(1).TrimStart
-            End If
-
-            'Test code
-            If Regex.IsMatch(strline, "       TestCode:") Then
-                strTemp = Regex.Split(strline, ": ")
-                TestCode = strTemp(1).TrimStart
-            End If
-
-            'Test temperature
-            If Regex.IsMatch(strline, "        TstTemp:") Then
-
-                strTemp = Regex.Split(strline, ": ")
-                TestTemp = strTemp(1).TrimStart
-
-            End If
-
-            'Handler type
-            If Regex.IsMatch(strline, "       HandType:") Then
-
-                strTemp = Regex.Split(strline, ": ")
-                hdlrType = strTemp(1).TrimStart
-            End If
-
-            'Handler ID
-            If Regex.IsMatch(strline, "         HandID:") Then
-                strTemp = Regex.Split(strline, ": ")
-                hdlrID = strTemp(1).TrimStart
-
-            End If
-
-            'Loadboard ID
-            If Regex.IsMatch(strline, "         LoadID:") Then
-
-                strTemp = Regex.Split(strline, ": ")
-                ldBrdID = strTemp(1).TrimStart
-            End If
-
-            'Socket IDs
-            If Regex.IsMatch(strline, "         ContID:") Then
-                strTemp = Regex.Split(strline, ": ")
-                socketIDs = strTemp(1).TrimStart
-            End If
-
-            'Socket IDs
-            If Regex.IsMatch(strline, "    Device#: ") Then
-
-                strTemp = Regex.Split(strline, ": ")
-                DevNum = "'" + strTemp(1).Trim
-            End If
-
-            If Regex.IsMatch(strline, strParamtofind) Then
-                Dim tmp As String = Regex.Match(strline, strParamtofind).Value
-                Dim fnd As Boolean = False
-                Dim param As String = String.Empty
-                Dim val As String = String.Empty
-                For Each x As String In tmp.Split(" ")
-                    If Not String.IsNullOrWhiteSpace(x) Then
-                        If Not fnd Then
-                            param = x
-                            fnd = True
-
-
-                            'Test number
-                            strTemp = Regex.Split(strline, " ")
-                            TestNum = strTemp(1)
-                            Test_Data = strline
-
-                            'What site
-                            Site = "'" + strTemp(4) + strTemp(5) + strTemp(6) + strTemp(7)
-                            'Test name
-                            Dim str1 As String
-                            str1 = strTemp(8) + " " + strTemp(9) + " " + strTemp(10) + " " + strTemp(11) + " " +
-                                strTemp(12) + " " + strTemp(13) + " " + strTemp(14) + " " + strTemp(15)
-                            TestName = str1.Trim
-
-                            'Is it alarm or fail?
-                            If strTemp.Contains("(F)") Then
-                                AlrmOrFail = "Fail"
-                            Else
-                                AlrmOrFail = "Alarm"
-                            End If
-
-                            'Row number in the datalog
-                            Rownum = CStr(intCounter)
-
-                        Else
-
-                            'val = x
-                        End If
-                    End If
-                Next
-
-                tmptable.Rows.Add(DTrptGenerated, DeviceID, CustLotID, xlJobName, xlpgmName, PgmFolderPath, Station, IGXLver, PartType, PackageType, TestCode, TestTemp, hdlrType, hdlrID, ldBrdID, socketIDs, DevNum, Rownum, TestNum, Site, TestName, AlrmOrFail, Test_Data)
-
-            End If
-
-            'tmptable.Rows.Add(DTrptGenerated, DeviceID, CustLotID, xlJobName, xlpgmName, PgmFolderPath, Station, IGXLver, PartType, PackageType, TestCode, TestTemp, hdlrType, hdlrID, ldBrdID, socketIDs, strParamtofind, DeviceID, TestNum, Site, TestName, Channel, mLow, Measured, mHigh)
-
         Next
-        'pBar.PerformStep()
-        'Next
 
+        ' Batch add rows to DataTable
+        If rows.Count > 0 Then
+            tmptable.BeginLoadData()
+            For Each row As DataRow In rows
+                tmptable.Rows.Add(row)
+            Next
+            tmptable.EndLoadData()
+        End If
 
-        Me.Text = strAppText + "   " + "[ Done search. Fetching data To DGV...Please wait. ]"
-
+        Me.Text = $"{strAppText} [ Done search. Fetching data To DGV...Please wait. ]"
     End Sub
+
+
 
 
     Private Sub Form1_MouseHover(sender As Object, e As EventArgs) Handles Me.MouseHover
