@@ -16,7 +16,7 @@ Module mdlFunction
 
     'Public folderDir As String = SaveFileFolder + "\summToSearch" 'Search file
     Public SaveFileFolder As String
-    Public strAppText As String = "SUMMARY SEARCHER V1.1"
+    Public strAppText As String = "SUMM TOOL V1.4"
     Public Sub LB_Copy2Clipboard(ByVal LB As ListBox)
         'set listbox1 to multisimple
         'LB.SelectionMode = SelectionMode.MultiSimple
@@ -35,8 +35,8 @@ Module mdlFunction
         LB.SelectedItems.Clear()
     End Sub
     Public strCurrentPath As String
-    Public m_strDefaultTraceviewPath As String = "\\10.83.133.10\uflex\uflex_summary\" '"C:\Users\sterc\OneDrive\Documents\Traceview\Saved_TraceView\U35\" 
-    '"C:\Users\sterc\Desktop\Traceview\Complete" '
+    Public m_strDefaultTraceviewPath As String = "\\10.83.133.10\uflex\uflex_summary\"
+
 
     Public Function GetListofTraceViewFileNames(ByVal strSN As String) As List(Of String)
         'Files are retrieved and arranged in increasing order of Data(Oldest first)
@@ -214,7 +214,7 @@ Module mdlFunction
     Sub SaveFilesCopyToFolder()
 
         Dim DestFolder = My.Settings.SaveFileFolder
-        Form1.Text = strAppText + "   [ Please wait while copying files to your folder. . . ]"
+        Form1.Text = strAppText + "   [ Please wait while copying files to your folder. ]"
         For x = 0 To Form1.lbFilenameList.SelectedItems.Count() - 1
             Dim fname As String = Form1.lbFilenameList.SelectedItems(x).Text
             Dim sourceFile As String = m_strDefaultTraceviewPath + fname
@@ -290,5 +290,45 @@ Module mdlFunction
 
     End Sub
 
+    Public Function GetFileName(ByVal path As String) As String
+        Dim _filename As String = System.IO.Path.GetFileName(path)
+        Return _filename
+    End Function
+
+    Public Function getDGVLastRow(ByVal dgv As DataGridView) As Integer
+
+        Dim dgvlastrow As Integer = 0
+        'Loop to get the last row of DGVDataset
+        For i As Integer = 0 To dgv.Rows.Count() - 1 Step +1
+            i = +i
+            dgvlastrow = i
+        Next
+
+        Return dgvlastrow
+    End Function
+
+    Public Function getLBxLastRow(ByVal lvw As ListView) As Integer
+
+        Dim lvwlastrow As Integer = 0
+        'Loop to get the last row of DGVDataset
+        For i As Integer = 0 To lvw.Items.Count Step +1
+            i = +i
+            lvwlastrow = i
+        Next
+
+        Return lvwlastrow
+    End Function
+
+    Public Function cntSelectedRow(ByVal lvw As ListView) As Integer
+
+        Dim lvwlastrow As Integer = 0
+        'Loop to get the last row of DGVDataset
+        For i As Integer = 0 To lvw.SelectedItems.Count Step +1
+            i = +i
+            lvwlastrow = i
+        Next
+
+        Return lvwlastrow
+    End Function
 
 End Module

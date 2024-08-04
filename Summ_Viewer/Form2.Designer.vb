@@ -38,6 +38,7 @@ Partial Class Form2
         Me.TextBox1.Name = "TextBox1"
         Me.TextBox1.Size = New System.Drawing.Size(152, 24)
         Me.TextBox1.TabIndex = 0
+        Me.TextBox1.Text = "PLEASE WAIT"
         Me.TextBox1.TextAlign = System.Windows.Forms.HorizontalAlignment.Center
         '
         'Form2

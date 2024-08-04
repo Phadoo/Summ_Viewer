@@ -9,7 +9,7 @@
       <Value Profile="(Default)">C:\Users\sgtercenios\scoop\apps\akelpad\4.9.8</Value>
     </Setting>
     <Setting Name="SaveFileFolder" Type="System.String" Scope="User">
-      <Value Profile="(Default)">application.StartupPath &amp; "\Saved Summary\"</Value>
+      <Value Profile="(Default)">C:\</Value>
     </Setting>
     <Setting Name="txtApplication" Type="System.String" Scope="User">
       <Value Profile="(Default)">\Notepad.exe</Value>

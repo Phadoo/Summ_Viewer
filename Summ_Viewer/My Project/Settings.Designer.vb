@@ -80,7 +80,7 @@ Namespace My
         
         <Global.System.Configuration.UserScopedSettingAttribute(),  _
          Global.System.Diagnostics.DebuggerNonUserCodeAttribute(),  _
-         Global.System.Configuration.DefaultSettingValueAttribute("application.StartupPath & ""\Saved Summary\""")>  _
+         Global.System.Configuration.DefaultSettingValueAttribute("C:\")>  _
         Public Property SaveFileFolder() As String
             Get
                 Return CType(Me("SaveFileFolder"),String)
